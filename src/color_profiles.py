@@ -4,6 +4,7 @@ from typing import List, Tuple
 IMAGE_SIZE = (600, 600)  # ancho, alto
 NUM_VARIATIONS = 20      # variaciones por color
 NOISE_RANGE = (0, 3)     # rango de ruido
+FRESCO_THRESHOLD = 60    # colores con H ≥ 60 son frescos
 
 DATASET_DIR = Path("dataset")
 FRESCO_DIR = DATASET_DIR / "fresco"
@@ -23,5 +24,3 @@ COLORS: List[Tuple[int, int, int]] = [
     (15, 255, 255),   # verde-amarillento
 ]
 
-# colores con H ≥ 60 son frescos
-FRESCO_THRESHOLD = 60  
