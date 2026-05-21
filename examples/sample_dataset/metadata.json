@@ -1,0 +1,32 @@
+{
+  "random_seed": 42,
+  "image_size": [
+    128,
+    128
+  ],
+  "num_variations": 1,
+  "noise_range": [
+    0,
+    3
+  ],
+  "fresh_threshold": 60,
+  "fresh_label": "fresh",
+  "altered_label": "altered",
+  "colors": [
+    [
+      70,
+      255,
+      255
+    ],
+    [
+      30,
+      255,
+      255
+    ]
+  ],
+  "generated_count": 2,
+  "class_counts": {
+    "fresh": 1,
+    "altered": 1
+  }
+}
