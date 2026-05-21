@@ -1,4 +1,6 @@
 import random
+from dataclasses import dataclass
+from pathlib import Path
 from typing import List, Tuple
 
 import cv2
@@ -11,6 +13,13 @@ from .profiles import (
     NOISE_RANGE,
     NUM_VARIATIONS,
 )
+
+
+@dataclass(frozen=True)
+class GeneratedImage:
+    path: Path
+    label: str
+    hsv_color: Tuple[int, int, int]
 
 
 def setup_directories(config: GenerationConfig | None = None) -> None:
@@ -47,20 +56,27 @@ def create_image(
     return Image.fromarray(rgb_img)
 
 
-def generate_images(config: GenerationConfig | None = None) -> None:
+def get_label_for_color(base_color: Tuple[int, int, int], config: GenerationConfig) -> str:
+    return config.fresh_label if base_color[0] >= config.fresh_threshold else config.altered_label
+
+
+def generate_images(config: GenerationConfig | None = None) -> list[GeneratedImage]:
     config = config or GenerationConfig()
     setup_directories(config)
+    generated: list[GeneratedImage] = []
 
     for i, base_color in enumerate(config.colors):
-        is_fresh = base_color[0] >= config.fresh_threshold
-        category = config.fresh_label if is_fresh else config.altered_label
-        target_dir = config.fresh_dir if is_fresh else config.altered_dir
+        category = get_label_for_color(base_color, config)
+        target_dir = config.fresh_dir if category == config.fresh_label else config.altered_dir
         variations = generate_color_variations(base_color, config.num_variations)
         for j, color in enumerate(variations):
             img = create_image(color, config.image_size, config.noise_range)
             filename = target_dir / f"{category}_{i}_{j}.png"
             img.save(filename, format="PNG", optimize=True)
+            generated.append(GeneratedImage(path=filename, label=category, hsv_color=color))
             print(f"Imagen guardada: {filename}")
+
+    return generated
 
 
 if __name__ == "__main__":
