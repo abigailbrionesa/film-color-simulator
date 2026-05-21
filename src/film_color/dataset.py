@@ -1,42 +1,48 @@
 from pathlib import Path
-
-import tensorflow as tf
-
-DATASET_DIR = Path("dataset")
-FRESCO_DIR = DATASET_DIR / "fresco"
-ALTERADO_DIR = DATASET_DIR / "alterado"
-
-IMAGE_SIZE = (600, 600)
-BATCH_SIZE = 32
+from dataclasses import dataclass
+from typing import Any
 
 
-def load_dataset():
+@dataclass(frozen=True)
+class DatasetConfig:
+    data_dir: Path = Path("dataset")
+    image_size: tuple[int, int] = (600, 600)
+    batch_size: int = 32
+    validation_split: float = 0.2
+    seed: int = 123
+
+
+def _tensorflow() -> Any:
+    import tensorflow as tf
+
+    return tf
+
+
+def load_dataset(config: DatasetConfig | None = None, subset: str = "training"):
+    config = config or DatasetConfig()
+    tf = _tensorflow()
     dataset = tf.keras.preprocessing.image_dataset_from_directory(
-        DATASET_DIR,
-        image_size=IMAGE_SIZE,
-        batch_size=BATCH_SIZE,
-        validation_split=0.2,
-        subset="training",
-        seed=123,
+        config.data_dir,
+        image_size=config.image_size,
+        batch_size=config.batch_size,
+        validation_split=config.validation_split,
+        subset=subset,
+        seed=config.seed,
     )
     return dataset
 
 
 def normalize_dataset(dataset):
+    tf = _tensorflow()
+
     def normalize(image, label):
         return tf.cast(image, tf.float32) / 255.0, label
 
     return dataset.map(normalize)
 
 
-def get_datasets():
-    train_ds = load_dataset()
-    val_ds = tf.keras.preprocessing.image_dataset_from_directory(
-        DATASET_DIR,
-        image_size=IMAGE_SIZE,
-        batch_size=BATCH_SIZE,
-        validation_split=0.2,
-        subset="validation",
-        seed=123,
-    )
+def get_datasets(config: DatasetConfig | None = None):
+    config = config or DatasetConfig()
+    train_ds = load_dataset(config, subset="training")
+    val_ds = load_dataset(config, subset="validation")
     return normalize_dataset(train_ds), normalize_dataset(val_ds)
