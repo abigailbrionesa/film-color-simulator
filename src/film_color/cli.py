@@ -3,6 +3,7 @@ from pathlib import Path
 from typing import Sequence
 
 from .config import GenerationConfig
+from .evaluation import EvaluationConfig, evaluate_model
 from .generator import generate_images
 from .training import TrainingConfig, train_model
 
@@ -83,6 +84,47 @@ def build_parser() -> argparse.ArgumentParser:
         default=123,
         help="Dataset split seed.",
     )
+
+    evaluate_parser = subparsers.add_parser(
+        "evaluate",
+        help="Evaluate a trained classifier.",
+    )
+    evaluate_parser.add_argument(
+        "--data",
+        type=Path,
+        default=Path("dataset"),
+        help="Generated dataset directory.",
+    )
+    evaluate_parser.add_argument(
+        "--model",
+        type=Path,
+        default=Path("artifacts/model.keras"),
+        help="Path to a trained Keras model.",
+    )
+    evaluate_parser.add_argument(
+        "--output",
+        type=Path,
+        default=Path("artifacts/evaluation.json"),
+        help="Path where evaluation metrics JSON will be saved.",
+    )
+    evaluate_parser.add_argument(
+        "--batch-size",
+        type=int,
+        default=32,
+        help="Evaluation batch size.",
+    )
+    evaluate_parser.add_argument(
+        "--image-size",
+        type=int,
+        default=600,
+        help="Square image size in pixels.",
+    )
+    evaluate_parser.add_argument(
+        "--seed",
+        type=int,
+        default=123,
+        help="Dataset split seed.",
+    )
     return parser
 
 
@@ -126,6 +168,31 @@ def run_train(args: argparse.Namespace) -> int:
     return 0
 
 
+def run_evaluate(args: argparse.Namespace) -> int:
+    if args.batch_size < 1:
+        raise ValueError("--batch-size must be at least 1")
+    if args.image_size < 1:
+        raise ValueError("--image-size must be at least 1")
+    if not args.model.exists():
+        raise ValueError(f"model path does not exist: {args.model}")
+    if not args.data.exists():
+        raise ValueError(f"dataset path does not exist: {args.data}")
+
+    config = EvaluationConfig(
+        data_dir=args.data,
+        model_path=args.model,
+        output_path=args.output,
+        image_size=(args.image_size, args.image_size),
+        batch_size=args.batch_size,
+        seed=args.seed,
+    )
+    metrics = evaluate_model(config)
+    print(f"Validation accuracy: {metrics['validation_accuracy']:.4f}")
+    print(f"Confusion matrix: {metrics['confusion_matrix']}")
+    print(f"Saved metrics to {args.output}")
+    return 0
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
@@ -135,6 +202,8 @@ def main(argv: Sequence[str] | None = None) -> int:
             return run_generate(args)
         if args.command == "train":
             return run_train(args)
+        if args.command == "evaluate":
+            return run_evaluate(args)
     except ValueError as exc:
         parser.error(str(exc))
 
