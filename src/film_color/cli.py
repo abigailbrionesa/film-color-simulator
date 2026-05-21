@@ -5,6 +5,7 @@ from typing import Sequence
 from .config import GenerationConfig
 from .evaluation import EvaluationConfig, evaluate_model
 from .generator import generate_images
+from .prediction import PredictionConfig, predict_image
 from .training import TrainingConfig, train_model
 
 
@@ -125,6 +126,29 @@ def build_parser() -> argparse.ArgumentParser:
         default=123,
         help="Dataset split seed.",
     )
+
+    predict_parser = subparsers.add_parser(
+        "predict",
+        help="Predict the class of one image with a trained model.",
+    )
+    predict_parser.add_argument(
+        "--image",
+        type=Path,
+        required=True,
+        help="Image to classify.",
+    )
+    predict_parser.add_argument(
+        "--model",
+        type=Path,
+        default=Path("artifacts/model.keras"),
+        help="Path to a trained Keras model.",
+    )
+    predict_parser.add_argument(
+        "--image-size",
+        type=int,
+        default=600,
+        help="Square image size in pixels.",
+    )
     return parser
 
 
@@ -193,6 +217,25 @@ def run_evaluate(args: argparse.Namespace) -> int:
     return 0
 
 
+def run_predict(args: argparse.Namespace) -> int:
+    if args.image_size < 1:
+        raise ValueError("--image-size must be at least 1")
+    if not args.image.exists():
+        raise ValueError(f"image path does not exist: {args.image}")
+    if not args.model.exists():
+        raise ValueError(f"model path does not exist: {args.model}")
+
+    config = PredictionConfig(
+        image_path=args.image,
+        model_path=args.model,
+        image_size=(args.image_size, args.image_size),
+    )
+    result = predict_image(config)
+    print(f"Predicted class: {result['predicted_class']}")
+    print(f"Confidence: {result['confidence']:.4f}")
+    return 0
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
@@ -204,6 +247,8 @@ def main(argv: Sequence[str] | None = None) -> int:
             return run_train(args)
         if args.command == "evaluate":
             return run_evaluate(args)
+        if args.command == "predict":
+            return run_predict(args)
     except ValueError as exc:
         parser.error(str(exc))
 

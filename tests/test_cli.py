@@ -30,3 +30,10 @@ def test_generate_cli_rejects_invalid_sample_count(tmp_path):
         main(["generate", "--samples", "0", "--output", str(tmp_path)])
 
     assert exc_info.value.code == 2
+
+
+def test_predict_cli_rejects_missing_image(tmp_path):
+    with pytest.raises(SystemExit) as exc_info:
+        main(["predict", "--image", str(tmp_path / "missing.png")])
+
+    assert exc_info.value.code == 2

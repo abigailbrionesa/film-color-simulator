@@ -48,6 +48,12 @@ Evaluate the trained model:
 film-color evaluate --data dataset --model artifacts/model.keras --output artifacts/evaluation.json
 ```
 
+Run inference on one image:
+
+```powershell
+film-color predict --image examples/sample_dataset/fresh/fresh_0_0.png --model artifacts/model.keras --image-size 128
+```
+
 ## Project Structure
 
 ```text
@@ -58,6 +64,7 @@ src/film_color/
   evaluation.py   # validation metrics and confusion matrix
   generator.py    # synthetic image generation
   model.py        # baseline CNN architecture
+  prediction.py   # single-image inference helper
   profiles.py     # HSV color profiles
   training.py     # training workflow
 tests/
