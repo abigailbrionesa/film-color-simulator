@@ -20,5 +20,8 @@ dev = [
     "pytest",
 ]
 
+[project.scripts]
+film-color = "film_color.cli:main"
+
 [tool.setuptools.packages.find]
 where = ["src"]
