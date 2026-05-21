@@ -1,6 +1,6 @@
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Tuple
+from typing import Any, Tuple
 
 from .profiles import COLORS
 
@@ -26,3 +26,9 @@ class GenerationConfig:
     @property
     def altered_dir(self) -> Path:
         return self.output_dir / self.altered_label
+
+    @classmethod
+    def from_calibration_file(cls, path: Path, **kwargs: Any) -> "GenerationConfig":
+        from .calibration import load_calibrated_colors
+
+        return cls(colors=load_calibrated_colors(path), **kwargs)
