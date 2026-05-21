@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "film-color-simulator"
+version = "0.1.0"
+description = "Synthetic data generation and baseline computer vision tools for pH-sensitive freshness indicator films."
+readme = "docs/README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "numpy",
+    "opencv-python",
+    "Pillow",
+    "tensorflow",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
