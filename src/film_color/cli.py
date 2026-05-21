@@ -4,6 +4,7 @@ from typing import Sequence
 
 from .config import GenerationConfig
 from .generator import generate_images
+from .training import TrainingConfig, train_model
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -41,6 +42,47 @@ def build_parser() -> argparse.ArgumentParser:
         default=None,
         help="Random seed for reproducible output.",
     )
+
+    train_parser = subparsers.add_parser(
+        "train",
+        help="Train the baseline CNN classifier.",
+    )
+    train_parser.add_argument(
+        "--data",
+        type=Path,
+        default=Path("dataset"),
+        help="Generated dataset directory.",
+    )
+    train_parser.add_argument(
+        "--epochs",
+        type=int,
+        default=10,
+        help="Number of training epochs.",
+    )
+    train_parser.add_argument(
+        "--batch-size",
+        type=int,
+        default=32,
+        help="Training batch size.",
+    )
+    train_parser.add_argument(
+        "--image-size",
+        type=int,
+        default=600,
+        help="Square image size in pixels.",
+    )
+    train_parser.add_argument(
+        "--model-output",
+        type=Path,
+        default=Path("artifacts/model.keras"),
+        help="Path where the trained model will be saved.",
+    )
+    train_parser.add_argument(
+        "--seed",
+        type=int,
+        default=123,
+        help="Dataset split seed.",
+    )
     return parser
 
 
@@ -62,6 +104,28 @@ def run_generate(args: argparse.Namespace) -> int:
     return 0
 
 
+def run_train(args: argparse.Namespace) -> int:
+    if args.epochs < 1:
+        raise ValueError("--epochs must be at least 1")
+    if args.batch_size < 1:
+        raise ValueError("--batch-size must be at least 1")
+    if args.image_size < 1:
+        raise ValueError("--image-size must be at least 1")
+
+    config = TrainingConfig(
+        data_dir=args.data,
+        epochs=args.epochs,
+        batch_size=args.batch_size,
+        image_size=(args.image_size, args.image_size),
+        model_output=args.model_output,
+        seed=args.seed,
+    )
+    metrics = train_model(config)
+    print(f"Saved model to {metrics['model_path']}")
+    print(f"Validation accuracy: {metrics['validation_accuracy']:.4f}")
+    return 0
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
@@ -69,6 +133,8 @@ def main(argv: Sequence[str] | None = None) -> int:
     try:
         if args.command == "generate":
             return run_generate(args)
+        if args.command == "train":
+            return run_train(args)
     except ValueError as exc:
         parser.error(str(exc))
 
