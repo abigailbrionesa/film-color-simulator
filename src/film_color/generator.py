@@ -5,20 +5,18 @@ import cv2
 import numpy as np
 from PIL import Image
 
+from .config import GenerationConfig
 from .profiles import (
-    ALTERADO_DIR,
-    COLORS,
-    FRESCO_DIR,
-    FRESCO_THRESHOLD,
     IMAGE_SIZE,
     NOISE_RANGE,
     NUM_VARIATIONS,
 )
 
 
-def setup_directories() -> None:
-    FRESCO_DIR.mkdir(parents=True, exist_ok=True)
-    ALTERADO_DIR.mkdir(parents=True, exist_ok=True)
+def setup_directories(config: GenerationConfig | None = None) -> None:
+    config = config or GenerationConfig()
+    config.fresh_dir.mkdir(parents=True, exist_ok=True)
+    config.altered_dir.mkdir(parents=True, exist_ok=True)
 
 
 def generate_color_variations(
@@ -37,26 +35,29 @@ def generate_color_variations(
 def create_image(
     hsv_color: Tuple[int, int, int],
     size: Tuple[int, int] = IMAGE_SIZE,
+    noise_range: Tuple[int, int] = NOISE_RANGE,
 ) -> Image.Image:
     bgr_color = cv2.cvtColor(np.uint8([[hsv_color]]), cv2.COLOR_HSV2BGR)[0][0]
     image = np.full((size[1], size[0], 3), bgr_color, dtype=np.uint8)
 
     hsv_img = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
-    noise = np.random.randint(NOISE_RANGE[0], NOISE_RANGE[1], hsv_img.shape, dtype=np.uint8)
+    noise = np.random.randint(noise_range[0], noise_range[1], hsv_img.shape, dtype=np.uint8)
     noisy_img = cv2.add(hsv_img, noise)
     rgb_img = cv2.cvtColor(noisy_img, cv2.COLOR_HSV2RGB)
     return Image.fromarray(rgb_img)
 
 
-def generate_images() -> None:
-    setup_directories()
+def generate_images(config: GenerationConfig | None = None) -> None:
+    config = config or GenerationConfig()
+    setup_directories(config)
 
-    for i, base_color in enumerate(COLORS):
-        category = "fresco" if base_color[0] >= FRESCO_THRESHOLD else "alterado"
-        target_dir = FRESCO_DIR if category == "fresco" else ALTERADO_DIR
-        variations = generate_color_variations(base_color, NUM_VARIATIONS)
+    for i, base_color in enumerate(config.colors):
+        is_fresh = base_color[0] >= config.fresh_threshold
+        category = config.fresh_label if is_fresh else config.altered_label
+        target_dir = config.fresh_dir if is_fresh else config.altered_dir
+        variations = generate_color_variations(base_color, config.num_variations)
         for j, color in enumerate(variations):
-            img = create_image(color, IMAGE_SIZE)
+            img = create_image(color, config.image_size, config.noise_range)
             filename = target_dir / f"{category}_{i}_{j}.png"
             img.save(filename, format="PNG", optimize=True)
             print(f"Imagen guardada: {filename}")
