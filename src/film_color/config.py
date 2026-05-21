@@ -15,6 +15,8 @@ class GenerationConfig:
     fresh_label: str = "fresh"
     altered_label: str = "altered"
     random_seed: int | None = None
+    enable_lighting: bool = False
+    enable_texture: bool = False
     colors: Tuple[Tuple[int, int, int], ...] = field(default_factory=lambda: tuple(COLORS))
 
     @property

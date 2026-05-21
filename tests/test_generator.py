@@ -13,6 +13,18 @@ def test_create_image_uses_configured_dimensions():
     assert image.mode == "RGB"
 
 
+def test_create_image_supports_optional_lighting_and_texture():
+    image = create_image(
+        (70, 255, 255),
+        size=(32, 24),
+        enable_lighting=True,
+        enable_texture=True,
+    )
+
+    assert image.size == (32, 24)
+    assert image.mode == "RGB"
+
+
 def test_get_label_for_color_uses_threshold():
     config = GenerationConfig(fresh_threshold=60)
 

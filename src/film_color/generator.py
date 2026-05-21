@@ -49,6 +49,8 @@ def create_image(
     size: Tuple[int, int] = IMAGE_SIZE,
     noise_range: Tuple[int, int] = NOISE_RANGE,
     rng: np.random.Generator | None = None,
+    enable_lighting: bool = False,
+    enable_texture: bool = False,
 ) -> Image.Image:
     rng = rng or np.random.default_rng()
     bgr_color = cv2.cvtColor(np.uint8([[hsv_color]]), cv2.COLOR_HSV2BGR)[0][0]
@@ -57,6 +59,14 @@ def create_image(
     hsv_img = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
     noise = rng.integers(noise_range[0], noise_range[1], hsv_img.shape, dtype=np.uint8)
     noisy_img = cv2.add(hsv_img, noise)
+    if enable_lighting:
+        gradient = np.linspace(0.85, 1.08, size[0], dtype=np.float32)
+        value = noisy_img[:, :, 2].astype(np.float32) * gradient[np.newaxis, :]
+        noisy_img[:, :, 2] = np.clip(value, 0, 255).astype(np.uint8)
+    if enable_texture:
+        texture = rng.normal(0, 3, noisy_img[:, :, 2].shape)
+        value = noisy_img[:, :, 2].astype(np.float32) + texture
+        noisy_img[:, :, 2] = np.clip(value, 0, 255).astype(np.uint8)
     rgb_img = cv2.cvtColor(noisy_img, cv2.COLOR_HSV2RGB)
     return Image.fromarray(rgb_img)
 
@@ -98,7 +108,14 @@ def generate_images(config: GenerationConfig | None = None) -> list[GeneratedIma
         target_dir = config.fresh_dir if category == config.fresh_label else config.altered_dir
         variations = generate_color_variations(base_color, config.num_variations, variation_rng)
         for j, color in enumerate(variations):
-            img = create_image(color, config.image_size, config.noise_range, noise_rng)
+            img = create_image(
+                color,
+                config.image_size,
+                config.noise_range,
+                noise_rng,
+                config.enable_lighting,
+                config.enable_texture,
+            )
             filename = target_dir / f"{category}_{i}_{j}.png"
             img.save(filename, format="PNG", optimize=True)
             generated.append(GeneratedImage(path=filename, label=category, hsv_color=color))
