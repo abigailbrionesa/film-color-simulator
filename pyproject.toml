@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "film-color-simulator"
 version = "0.1.0"
 description = "Synthetic data generation and baseline computer vision tools for pH-sensitive freshness indicator films."
-readme = "docs/README.md"
+readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
     "numpy",
